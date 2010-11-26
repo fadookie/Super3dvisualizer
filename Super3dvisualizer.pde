@@ -10,14 +10,22 @@ static int sampleRate = 512;
 
 int bufferStart = 0;
 static int bufferMax = 100;
+float countRad = 0;
 
-static float power = 1;
+static float power = 1.5;
 static float xStretch = 5.0;
 static float yStretch = 1.0;
 static float zStretch = 5.0;
 
+float cameraCenterX = 255;
+float cameraCenterY = 0;
+float cameraCenterZ = 255;
+
+static float alphaCycle = 0.03;
+
 float savedmouseX;
 float savedmouseY;
+float savedmouseZ = 220.0;
 
 float[][] geomBuffer;
 
@@ -32,15 +40,13 @@ void setup()
   in = minim.getLineIn(Minim.STEREO, sampleRate);
   in.mute();
   
-  groove = minim.loadFile("Legacy.mp3", sampleRate);
-  groove.play();
+  //groove = minim.loadFile("Legacy.mp3", sampleRate);
+  //groove.play();
   
   fft = new FFT(in.bufferSize(), in.sampleRate());
     fft.logAverages(22, 3);
     
   geomBuffer = new float[bufferMax][fft.specSize()];
-  
-  print ("geomBuffer.length == "+geomBuffer.length); 
   
   for(int i = 0; i < fft.specSize(); i++)
   {    
@@ -55,7 +61,6 @@ void setup()
  
 void draw()
 {
-//  background(0);
 //  stroke(255);
 //  // draw the waveforms
 //  for(int i = 0; i < in.bufferSize() - 1; i++)
@@ -71,10 +76,10 @@ void draw()
          
    //lights();
    
-   background(#7FFFD0);
+   background(10);
    
-   specular(255, 205,0);
-   lightSpecular(255, 205,0);
+   specular(#00BFFF);
+   lightSpecular(0, 191, 255);
    directionalLight(49, 140, 231, 0, 0, -1);
   //background((int)fft.calcAvg(10, 20000) * 10 + 80);
  
@@ -92,24 +97,28 @@ void draw()
   rotateX(-PI/6);
   rotateY(PI/3 + savedmouseY/float(height) * PI);*/
   
-   camera(savedmouseX, savedmouseY, 220.0, // eyeX, eyeY, eyeZ
-         0.0, 0.0, 0.0, // centerX, centerY, centerZ
+   camera(savedmouseX, savedmouseY, savedmouseZ, // eyeX, eyeY, eyeZ
+         cameraCenterX, cameraCenterY, cameraCenterZ, // centerX, centerY, centerZ
          0.0, -1.0, 0.0); // upX, upY, upZ
          
  //draw FFT
  translate(0, -1*height, 0); 
  
- //fft.forward(in.mix);
- fft.forward(groove.mix);
+ fft.forward(in.mix);
+ //fft.forward(groove.mix);
  //print(fft.calcAvg(10, 20000));
   
   //fill(bufferStart, bufferStart - 100, bufferStart -50);
-  fill(#FF7E00);
-  noStroke();
-  //stroke(0);
-  //strokeWeight(2);
+  //fill(#FF7E00);
+  //noStroke();
+  float colorPercentage = ((sin(countRad) * 0.5 + 0.5) * 255);
+  
+  fill(#00BFFF, colorPercentage);
+  //println(colorPercentage);
+  stroke(#00BFFF);
+  strokeWeight(1);
 
-     beginShape(TRIANGLE_STRIP);
+     beginShape(QUAD_STRIP);
       for (int band = 0; band < fft.specSize(); band++) {
         int i = bufferStart % (geomBuffer.length - 1);
         
@@ -141,8 +150,9 @@ void draw()
   for (int zPosition = bufferStart + 1; zPosition != bufferStart;) {
    //println(bufferStart + " " + zPosition);
 
-     beginShape(TRIANGLE_STRIP);
+
       for (int band = 0; band < fft.specSize(); band++) {
+        beginShape(TRIANGLE_STRIP);
         int i = (bufferStart + zPosition) % (geomBuffer.length -1);
         
         if ((i + 1) < geomBuffer.length) {
@@ -151,8 +161,9 @@ void draw()
         } else {
           print ("i == "+ i +". geomBuffer.length == " + geomBuffer.length + ". i >= geomBuffer.length. Waaah!\n");
         }
+        endShape();
       }
-      endShape();
+
       
       
     zPosition++;
@@ -175,12 +186,17 @@ void draw()
     bufferStart = 0;
   }
   
+  if (countRad < 6.28) {
+    countRad += alphaCycle;
+  } else {
+    countRad = 0;
+  }
   //Draw X, Y, Z axis
   stroke(255,0,0);
   line (0,height,0,50,height,0); //x+ axis
-  stroke(0,0,255);
-  line (0,height,0,0,height+50,0); //y+ axis
   stroke(0,255,0);
+  line (0,height,0,0,height+50,0); //y+ axis
+  stroke(0,0,255);
   line (0,height,0,0,height,50); //z axis
   stroke(255);
   fill(255);
@@ -193,6 +209,19 @@ void mouseDragged() {
    savedmouseY = mouseY;
 }
  
+void keyPressed() {
+  if (key == CODED) {
+    if (keyCode == UP) {
+      savedmouseZ += 100;
+    } else if(keyCode == DOWN) {
+      savedmouseZ -= 100;
+    } else if(keyCode == LEFT) {
+      cameraCenterX -= 100;
+    } else if (keyCode == RIGHT) {
+      cameraCenterX += 100;
+    }
+  }
+}
  
 void stop()
 {
