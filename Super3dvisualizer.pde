@@ -116,8 +116,9 @@ void draw()
   fill(#00BFFF, colorPercentage);
   //println(colorPercentage);
   stroke(#00BFFF);
-  strokeWeight(1);
+  strokeWeight(3);
 
+      //Evil hack to draw over the gap left by an error in how we implemented our ring buffer - this is the "scan line"
      beginShape(QUAD_STRIP);
       for (int band = 0; band < fft.specSize(); band++) {
         int i = bufferStart % (geomBuffer.length - 1);
@@ -147,13 +148,22 @@ void draw()
 //        endShape();
 //      }
   
+  float redFactor = 30;
+  float greenFactor = 0;
+  float blueFactor = 200;
+  
   for (int zPosition = bufferStart + 1; zPosition != bufferStart;) {
+
+    //;pow(geomBuffer[i + 1][band], power) * -1
    //println(bufferStart + " " + zPosition);
 
 
       for (int band = 0; band < fft.specSize(); band++) {
+        greenFactor += 0.004;
         beginShape(TRIANGLE_STRIP);
         int i = (bufferStart + zPosition) % (geomBuffer.length -1);
+        
+        stroke(redFactor, greenFactor, blueFactor);
         
         if ((i + 1) < geomBuffer.length) {
         vertex((band)* xStretch, height + pow(geomBuffer[i][band], power) * yStretch, zPosition * zStretch);
