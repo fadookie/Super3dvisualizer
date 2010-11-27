@@ -118,7 +118,7 @@ void draw()
   stroke(#00BFFF);
   strokeWeight(3);
 
-      //Evil hack to draw over the gap left by an error in how we implemented our ring buffer - this is the "scan line"
+      //Evil hack to draw over the gap left by an error in how we implemented our ring buffer - this is the "scan line
      beginShape(QUAD_STRIP);
       for (int band = 0; band < fft.specSize(); band++) {
         int i = bufferStart % (geomBuffer.length - 1);
