@@ -11,17 +11,15 @@ static int sampleRate = 512;
 int bufferStart = 0;
 static int bufferMax = 100;
 
-static float power = 0.5;
+static float power = 1;
 static float xStretch = 5.0;
-static float yStretch = 8.0;
+static float yStretch = 1.0;
 static float zStretch = 5.0;
 
 float savedmouseX;
 float savedmouseY;
 
 float[][] geomBuffer;
-
-float[] sample;
 
 void setup()
 {
@@ -40,13 +38,17 @@ void setup()
   fft = new FFT(in.bufferSize(), in.sampleRate());
     fft.logAverages(22, 3);
     
-   sample = groove.mix.toArray();
-    
-  geomBuffer = new float[bufferMax][sample.length];
+  geomBuffer = new float[bufferMax][fft.specSize()];
   
   print ("geomBuffer.length == "+geomBuffer.length); 
   
+  for(int i = 0; i < fft.specSize(); i++)
+  {    
+    geomBuffer[bufferStart][i] = fft.getBand(i);
+  }
+  
   //frameRate(1);
+//smooth();
 
 
 }
@@ -61,15 +63,21 @@ void draw()
 //    line(i, 50 + in.left.get(i)*50, i+1, 50 + in.left.get(i+1)*50);
 //    line(i, 150 + in.right.get(i)*50, i+1, 150 + in.right.get(i+1)*50);
 //  }
-  lights();
   
    // Change height of the camera with mouseY
  /*camera(30.0, mouseY * 10, 220.0, // eyeX, eyeY, eyeZ
          0.0, 0.0, 0.0, // centerX, centerY, centerZ
          0.0, 1.0, 0.0); // upX, upY, upZ*/
          
-   lights();
-  background((int)fft.calcAvg(10, 20000) * 10 + 80);
+   //lights();
+   
+   background(#7FFFD0);
+   
+   specular(255, 205,0);
+   lightSpecular(255, 205,0);
+   directionalLight(49, 140, 231, 0, 0, -1);
+  //background((int)fft.calcAvg(10, 20000) * 10 + 80);
+ 
   
   //camera shit
   /*float cameraY = (height/2.0);
@@ -84,37 +92,82 @@ void draw()
   rotateX(-PI/6);
   rotateY(PI/3 + savedmouseY/float(height) * PI);*/
   
-   camera(mouseX, mouseY, 220.0, // eyeX, eyeY, eyeZ
+   camera(savedmouseX, savedmouseY, 220.0, // eyeX, eyeY, eyeZ
          0.0, 0.0, 0.0, // centerX, centerY, centerZ
          0.0, -1.0, 0.0); // upX, upY, upZ
          
-  
  //draw FFT
  translate(0, -1*height, 0); 
  
  //fft.forward(in.mix);
- sample = groove.mix.toArray();
  fft.forward(groove.mix);
  //print(fft.calcAvg(10, 20000));
+  
+  //fill(bufferStart, bufferStart - 100, bufferStart -50);
+  fill(#FF7E00);
+  noStroke();
+  //stroke(0);
+  //strokeWeight(2);
 
-  for(int i = 0; i < sample.length; i++)
-  {    
-    geomBuffer[bufferStart][i] = sample[i];
-  }
-  
-  fill(bufferStart, bufferStart - 100, bufferStart -50);
-  //noStroke();
-  stroke(0);
-  strokeWeight(2);
-  
-  for (int time = 0; time < bufferStart; time++) {
      beginShape(TRIANGLE_STRIP);
-      for (int band = 0; band < sample.length; band++) {
-        vertex((band)* xStretch, height + pow(geomBuffer[time][band], power) * yStretch, time * zStretch);
-        vertex((band)* xStretch, height + pow(geomBuffer[time+1][band], power) * yStretch, (time+1) * zStretch);
+      for (int band = 0; band < fft.specSize(); band++) {
+        int i = bufferStart % (geomBuffer.length - 1);
+        
+        if ((i + 1) < geomBuffer.length) {
+        vertex((band)* xStretch, height + pow(geomBuffer[i][band], power) * yStretch, bufferStart * zStretch);
+        vertex((band)* xStretch, height + pow(geomBuffer[i + 1][band], power) * yStretch, (bufferStart+1) * zStretch);
+        } else {
+          print ("i == "+ i +". geomBuffer.length == " + geomBuffer.length + ". i >= geomBuffer.length. Waaah!\n");
+        }
       }
       endShape();
+      
+//      beginShape(TRIANGLE_STRIP);
+//      int bufferHack = bufferStart - 1;
+//      if (bufferHack != -1) {
+//        for (int band = 0; band < fft.specSize(); band++) {
+//          int i = bufferHack % (geomBuffer.length - 1);
+//          
+//          if ((i + 1) < geomBuffer.length) {
+//          vertex((band)* xStretch, height + geomBuffer[i][band] * yStretch, bufferHack * zStretch);
+//          vertex((band)* xStretch, height + geomBuffer[i + 1][band] * yStretch, (bufferHack+1) * zStretch);
+//          } else {
+//            print ("i == "+ i +". geomBuffer.length == " + geomBuffer.length + ". i >= geomBuffer.length. Waaah!\n");
+//          }
+//        }
+//        endShape();
+//      }
+  
+  for (int zPosition = bufferStart + 1; zPosition != bufferStart;) {
+   //println(bufferStart + " " + zPosition);
+
+     beginShape(TRIANGLE_STRIP);
+      for (int band = 0; band < fft.specSize(); band++) {
+        int i = (bufferStart + zPosition) % (geomBuffer.length -1);
+        
+        if ((i + 1) < geomBuffer.length) {
+        vertex((band)* xStretch, height + pow(geomBuffer[i][band], power) * yStretch, zPosition * zStretch);
+        vertex((band)* xStretch, height + pow(geomBuffer[i + 1][band], power) * yStretch, (zPosition+1) * zStretch);
+        } else {
+          print ("i == "+ i +". geomBuffer.length == " + geomBuffer.length + ". i >= geomBuffer.length. Waaah!\n");
+        }
+      }
+      endShape();
+      
+      
+    zPosition++;
+    if(zPosition >= geomBuffer.length)
+    {
+      zPosition = 0;
+    }
   }
+  
+  //Update our FFT data
+  for(int i = 0; i < fft.specSize(); i++)
+  {    
+    geomBuffer[bufferStart][i] = fft.getBand(i);
+  }
+
   
   if (bufferStart < bufferMax - 1) {
     bufferStart++;
@@ -145,7 +198,7 @@ void stop()
 {
   // always close Minim audio classes when you are done with them
   in.close();
-  groove.close();
+  //groove.close();
   minim.stop();
  
   super.stop();
