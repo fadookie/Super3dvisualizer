@@ -31,7 +31,7 @@ float[][] geomBuffer;
 
 void setup()
 {
-  size(800, 800, P3D);
+  size(851, 800, P3D);
  
   minim = new Minim(this);
   //minim.debugOn();
@@ -40,10 +40,10 @@ void setup()
   in = minim.getLineIn(Minim.STEREO, sampleRate);
   in.mute();
   
-  //groove = minim.loadFile("Legacy.mp3", sampleRate);
-  //groove.play();
+  groove = minim.loadFile("Legacy.mp3", sampleRate);
+  groove.play();
   
-  fft = new FFT(in.bufferSize(), in.sampleRate());
+  fft = new FFT(groove.bufferSize(), groove.sampleRate());
     fft.logAverages(22, 3);
     
   geomBuffer = new float[bufferMax][fft.specSize()];
@@ -104,7 +104,7 @@ void draw()
  //draw FFT
  translate(0, -1*height, 0); 
  
- fft.forward(in.mix);
+ fft.forward(groove.mix);
  //fft.forward(groove.mix);
  //print(fft.calcAvg(10, 20000));
   
