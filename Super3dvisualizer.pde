@@ -1,3 +1,9 @@
+/**
+ * Super3dvisualizer, a 3D Surface Spectogram Audio Visualizer in Processing
+ *
+ * @author Eliot Lash
+ * @copyright Copyright (c) 2010-2012 Eliot Lash
+ */
 import ddf.minim.analysis.*;
 import ddf.minim.*;
  
