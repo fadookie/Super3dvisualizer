@@ -3,19 +3,25 @@ import ddf.minim.*;
  
 Minim minim;
 AudioInput in;
+AudioPlayer groove;
 FFT fft;
 
-static int sampleRate = 64;
-static int power = 1;
-int timer = 0;
-static int timerMax = 100;
+static int sampleRate = 512;
+
+int bufferStart = 0;
+static int bufferMax = 100;
+
+static float power = 0.5;
 static float xStretch = 5.0;
 static float yStretch = 8.0;
 static float zStretch = 5.0;
+
 float savedmouseX;
 float savedmouseY;
 
 float[][] geomBuffer;
+
+float[] sample;
 
 void setup()
 {
@@ -28,10 +34,17 @@ void setup()
   in = minim.getLineIn(Minim.STEREO, sampleRate);
   in.mute();
   
+  groove = minim.loadFile("Legacy.mp3", sampleRate);
+  groove.play();
+  
   fft = new FFT(in.bufferSize(), in.sampleRate());
     fft.logAverages(22, 3);
     
-  geomBuffer = new float[timerMax + 1][fft.specSize()];
+   sample = groove.mix.toArray();
+    
+  geomBuffer = new float[bufferMax][sample.length];
+  
+  print ("geomBuffer.length == "+geomBuffer.length); 
   
   //frameRate(1);
 
@@ -59,7 +72,7 @@ void draw()
   background((int)fft.calcAvg(10, 20000) * 10 + 80);
   
   //camera shit
-  float cameraY = (height/2.0);
+  /*float cameraY = (height/2.0);
   float fov = (savedmouseX /float(width) * PI/2) * -1;
   float cameraZ = cameraY / tan(fov / 2.0);
   float aspect = float(width)/float(height);
@@ -69,41 +82,44 @@ void draw()
   perspective(fov, aspect, cameraZ/10.0, cameraZ*10.0);
   translate(width/2+30, height/2, 0);
   rotateX(-PI/6);
-  rotateY(PI/3 + savedmouseY/float(height) * PI);
-
+  rotateY(PI/3 + savedmouseY/float(height) * PI);*/
+  
+   camera(mouseX, mouseY, 220.0, // eyeX, eyeY, eyeZ
+         0.0, 0.0, 0.0, // centerX, centerY, centerZ
+         0.0, -1.0, 0.0); // upX, upY, upZ
+         
   
  //draw FFT
  translate(0, -1*height, 0); 
  
- fft.forward(in.mix);
+ //fft.forward(in.mix);
+ sample = groove.mix.toArray();
+ fft.forward(groove.mix);
  //print(fft.calcAvg(10, 20000));
 
-  for(int i = 0; i < fft.specSize(); i++)
+  for(int i = 0; i < sample.length; i++)
   {    
-    geomBuffer[timer][i] = fft.getBand(i);
+    geomBuffer[bufferStart][i] = sample[i];
   }
   
-  fill(timer, timer - 100, timer -50);
+  fill(bufferStart, bufferStart - 100, bufferStart -50);
+  //noStroke();
   stroke(0);
   strokeWeight(2);
   
-  for (int time = 0; time < timer; time++) {
+  for (int time = 0; time < bufferStart; time++) {
      beginShape(TRIANGLE_STRIP);
-      for (int band = 0; band < fft.specSize(); band++) {
-        vertex((band)* xStretch, height + geomBuffer[time][band] * yStretch, time * zStretch);
-        vertex((band)* xStretch, height + geomBuffer[time+1][band] * yStretch, (time+1) * zStretch);
+      for (int band = 0; band < sample.length; band++) {
+        vertex((band)* xStretch, height + pow(geomBuffer[time][band], power) * yStretch, time * zStretch);
+        vertex((band)* xStretch, height + pow(geomBuffer[time+1][band], power) * yStretch, (time+1) * zStretch);
       }
-        //vertex(0,height, time * zStretch);
       endShape();
   }
-      
-
-  //translate(0,0,0);
   
-  if (timer < timerMax) {
-    timer = timer + 1;
+  if (bufferStart < bufferMax - 1) {
+    bufferStart++;
   } else {
-    timer = 0;
+    bufferStart = 0;
   }
   
   //Draw X, Y, Z axis
@@ -129,6 +145,7 @@ void stop()
 {
   // always close Minim audio classes when you are done with them
   in.close();
+  groove.close();
   minim.stop();
  
   super.stop();
