@@ -8,9 +8,12 @@ FFT fft;
 static int sampleRate = 64;
 static int power = 1;
 int timer = 0;
-static float timeStretch = 0.5;
-static int timerMax = 800;
-static float xStretch = 2.0;
+static int timerMax = 100;
+static float xStretch = 5.0;
+static float yStretch = 8.0;
+static float zStretch = 5.0;
+float savedmouseX;
+float savedmouseY;
 
 float[][] geomBuffer;
 
@@ -29,6 +32,8 @@ void setup()
     fft.logAverages(22, 3);
     
   geomBuffer = new float[timerMax + 1][fft.specSize()];
+  
+  //frameRate(1);
 
 
 }
@@ -55,7 +60,7 @@ void draw()
   
   //camera shit
   float cameraY = (height/2.0);
-  float fov = (mouseX /float(width) * PI/2) * -1;
+  float fov = (savedmouseX /float(width) * PI/2) * -1;
   float cameraZ = cameraY / tan(fov / 2.0);
   float aspect = float(width)/float(height);
   if (mousePressed) {
@@ -64,7 +69,7 @@ void draw()
   perspective(fov, aspect, cameraZ/10.0, cameraZ*10.0);
   translate(width/2+30, height/2, 0);
   rotateX(-PI/6);
-  rotateY(PI/3 + mouseY/float(height) * PI);
+  rotateY(PI/3 + savedmouseY/float(height) * PI);
 
   
  //draw FFT
@@ -74,22 +79,22 @@ void draw()
  //print(fft.calcAvg(10, 20000));
 
   for(int i = 0; i < fft.specSize(); i++)
-  {
-    // draw the line for frequency band i, scaling it by 4 so we can see it a bit better
-    //line(i, height + (pow(fft.getBand(i), power)*6), timer,  i+1,height + (pow(fft.getBand(i+1), power)*6), timer);
-    
+  {    
     geomBuffer[timer][i] = fft.getBand(i);
   }
   
-  stroke(timer, timer - 100, timer -50);
+  fill(timer, timer - 100, timer -50);
+  stroke(0);
+  strokeWeight(2);
   
-  for (int i = 0; i <= timer; i++) {
-     beginShape();
-      for (int e = 0; e < fft.specSize(); e++) {
-        vertex(e * xStretch, height + (pow(geomBuffer[i][e], power)*6), i * timeStretch);
+  for (int time = 0; time < timer; time++) {
+     beginShape(TRIANGLE_STRIP);
+      for (int band = 0; band < fft.specSize(); band++) {
+        vertex((band)* xStretch, height + geomBuffer[time][band] * yStretch, time * zStretch);
+        vertex((band)* xStretch, height + geomBuffer[time+1][band] * yStretch, (time+1) * zStretch);
       }
-        vertex(0,height, i * timeStretch);
-      endShape(CLOSE);
+        //vertex(0,height, time * zStretch);
+      endShape();
   }
       
 
@@ -99,10 +104,9 @@ void draw()
     timer = timer + 1;
   } else {
     timer = 0;
-     background((int)fft.calcAvg(10, 20000) * 10 + 80);
   }
   
-  //Draw axes
+  //Draw X, Y, Z axis
   stroke(255,0,0);
   line (0,height,0,50,height,0); //x+ axis
   stroke(0,0,255);
@@ -115,8 +119,9 @@ void draw()
 
 }
 
-void mousePressed() {
-   background((int)fft.calcAvg(10, 20000) * 10 + 80);
+void mouseDragged() {
+   savedmouseX = mouseX;
+   savedmouseY = mouseY;
 }
  
  
