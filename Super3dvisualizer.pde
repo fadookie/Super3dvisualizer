@@ -258,7 +258,7 @@ void keyPressed() {
       // Redraw to clear out persisted draw mess here too
       // There is no mouseReleased event when using keys ;-)
       background(10);
-      println("keyPressed clear triggered!");
+      //println("keyPressed clear triggered!");
     }
   }
 }
