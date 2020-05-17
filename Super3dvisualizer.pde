@@ -254,6 +254,12 @@ void keyPressed() {
     } else if (keyCode == RIGHT) {
       cameraCenterX += 100;
     }
+    if (keyCode == UP || keyCode == DOWN || keyCode == LEFT || keyCode == RIGHT) {
+      // Redraw to clear out persisted draw mess here too
+      // There is no mouseReleased event when using keys ;-)
+      background(10);
+      println("keyPressed clear triggered!");
+    }
   }
 }
  
