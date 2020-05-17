@@ -35,9 +35,13 @@ float savedmouseZ = 220.0;
 
 float[][] geomBuffer;
 
+int mouseDraggedFrame = 0;
+static final int backroundRedrawFrameDivisor = 20;
+
 void setup()
 {
   size(851, 800, P3D);
+  background(10);
  
   minim = new Minim(this);
   //minim.debugOn();
@@ -82,7 +86,9 @@ void draw()
          
    //lights();
    
-   background(10);
+   // Don't redraw & clear background every frame
+   // In processing 3, this allows for persistent trails
+   //background(10);
    
    specular(#00BFFF);
    lightSpecular(0, 191, 255);
@@ -223,6 +229,18 @@ void draw()
 void mouseDragged() {
    savedmouseX = mouseX;
    savedmouseY = mouseY;
+   mouseDraggedFrame += 1;
+   // Every N frames, redraw background to clear out drawn mess
+   // Lower values of modulus divisor shows less tracer trails, but flickers more
+   if (mouseDraggedFrame % backroundRedrawFrameDivisor == 0) {
+     background(10);
+   }
+}
+
+void mouseReleased() {
+  // Final background redraw to clear last leftover draw mess
+  // Happens when mouseDraggedFrame is not divisible by backroundRedrawFrameDivisor
+  background(10);
 }
  
 void keyPressed() {
