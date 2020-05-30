@@ -6,11 +6,14 @@
  */
 import ddf.minim.analysis.*;
 import ddf.minim.*;
- 
+import peasy.*;
+import java.io.*;
+
 Minim minim;
 AudioInput in;
 AudioPlayer groove;
 FFT fft;
+PeasyCam cam;
 
 static int sampleRate = 512;
 
@@ -38,6 +41,14 @@ float[][] geomBuffer;
 void setup()
 {
   size(851, 800, P3D);
+ 
+  cam = new PeasyCam(this, 100);
+  cam.setMinimumDistance(50);
+  cam.setMaximumDistance(800);
+  CameraState camState = readCameraData();
+  if(camState != null) {
+    cam.setState(camState);
+  }
  
   minim = new Minim(this);
   //minim.debugOn();
@@ -103,9 +114,9 @@ void draw()
   rotateX(-PI/6);
   rotateY(PI/3 + savedmouseY/float(height) * PI);*/
   
-   camera(savedmouseX, savedmouseY, savedmouseZ, // eyeX, eyeY, eyeZ
-         cameraCenterX, cameraCenterY, cameraCenterZ, // centerX, centerY, centerZ
-         0.0, -1.0, 0.0); // upX, upY, upZ
+  // camera(savedmouseX, savedmouseY, savedmouseZ, // eyeX, eyeY, eyeZ
+  //       cameraCenterX, cameraCenterY, cameraCenterZ, // centerX, centerY, centerZ
+  //       0.0, -1.0, 0.0); // upX, upY, upZ
          
  //draw FFT
  translate(0, -1*height, 0); 
@@ -236,7 +247,50 @@ void keyPressed() {
     } else if (keyCode == RIGHT) {
       cameraCenterX += 100;
     }
+  } else {
+    if (key == 'c') {
+      saveCameraData();
+    }
   }
+}
+
+void saveCameraData() {
+  println("try to write camera state to " + sketchPath("camera.data"));
+  FileOutputStream f_out = null;
+  ObjectOutputStream obj_out = null;
+  try {
+    f_out = new FileOutputStream(sketchPath("camera.data"));
+    obj_out = new ObjectOutputStream(f_out);
+    CameraState state = cam.getState();
+    obj_out.writeObject(state);
+    println("wrote camera data");
+  } catch (Exception e) {
+    println(e);
+  } finally {
+    try {
+      if (f_out != null) f_out.close();
+      if (obj_out != null) obj_out.close();
+    } catch (Exception e) {}
+  }
+}
+
+CameraState readCameraData() {
+  FileInputStream f_in = null;
+  ObjectInputStream obj_in = null;
+  try {
+    f_in = new FileInputStream(sketchPath("camera.data"));
+    obj_in = new ObjectInputStream(f_in);
+    CameraState state = (CameraState)obj_in.readObject();
+    return state;
+  } catch (Exception e) {
+    println(e);
+  } finally {
+    try {
+      if (f_in != null) f_in.close();
+      if (obj_in != null) obj_in.close();
+    } catch (Exception e) {}
+  }
+  return null;
 }
  
 void stop()
